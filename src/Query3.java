@@ -80,8 +80,8 @@ public class Query3{
     }
   }
   
-  public static class FloatSumReducer 
-       extends Reducer<Text, FloatWritable , Text , Text>{
+  public static class TransSumReducer 
+       extends Reducer<Text, Text , Text , Text>{
     private Text result = new Text();
 
     public void reduce(Text key, Iterable<Text> values, 
@@ -125,12 +125,13 @@ public class Query3{
     }
     Job job = new Job(conf, "query3");
     job.setJarByClass(Query3.class);
-    job.setMapperClass(TokenizerMapper.class);
+    //job.setMapperClass(TokenizerMapper.class);
+    //job.setMapperClass(TokenizerMapper2.class);
     //job.setCombinerClass(FloatSumReducer.class);
-    job.setReducerClass(FloatSumReducer.class);
-    job.setOutputKeyClass(Text.class);
+    job.setReducerClass(TransSumReducer.class);
     job.setNumReduceTasks(6);
-    job.setOutputValueClass(FloatWritable.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
     
     MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
     MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper2.class);
