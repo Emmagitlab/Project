@@ -79,7 +79,7 @@ public class Query4 {
         }
     }
 
-    public static class TransSumReducer
+    public static class TransTotalReducer
             extends Reducer<Text, Text, Text, Text> {
 
         private Text result = new Text();
@@ -142,14 +142,11 @@ public class Query4 {
                countryCode = Integer.parseInt(tinfo[m][2]);
                total = Float.parseFloat(tinfo[m][1]);
                
-               
                float max = 0.0f;
                float min = 9999.0f;
                
                maxTotal = null;
                minTotal = null;
-               
-                
                 
                switch(countryCode){ 
                    case 1: countCust[0]++;
@@ -192,18 +189,16 @@ public class Query4 {
                    maxTotal[9]= compareMax(total,max);
                    minTotal[9]=compareMin(total,min);
                    break;
-                       
-                   
-                
                }
             }
-            for (int n=0; n < 10; n++){
             
+            for (int n=0; n < 10; n++){
                 outkey = Integer.toString(n+1);
                 record = countCust[n]+" "+ maxTotal[n]+" "+ minTotal[n];
-            
+                key.set(outkey);
+                result.set(record);
+                context.write(key, result);
             }
-            
             
         }
         public float compareMax(float total, float max){
@@ -231,15 +226,15 @@ public class Query4 {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         if (args.length != 3) {
-            System.err.println("Usage: query3 <HDFS input file1> <HDFS input file2> <HDFS output file>");
+            System.err.println("Usage: query4 <HDFS input file1> <HDFS input file2> <HDFS output file>");
             System.exit(2);
         }
-        Job job = new Job(conf, "query3");
-        job.setJarByClass(Query3.class);
+        Job job = new Job(conf, "query4");
+        job.setJarByClass(Query4.class);
         //job.setMapperClass(TokenizerMapper.class);
         //job.setMapperClass(TokenizerMapper2.class);
         //job.setCombinerClass(FloatSumReducer.class);
-        job.setReducerClass(TransSumReducer.class);
+        job.setReducerClass(TransTotalReducer.class);
         job.setNumReduceTasks(6);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
