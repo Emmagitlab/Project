@@ -1,0 +1,252 @@
+/**
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.apache.hadoop.examples;
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+import java.util.Arrays;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class Query4 {
+
+    public static class TokenizerMapper
+            extends Mapper<Object, Text, Text, Text> {
+
+        private final static Text custInfo = new Text();
+        private Text custID = new Text();
+
+        public void map(Object key, Text value, Reducer.Context context
+        ) throws IOException, InterruptedException {
+            StringTokenizer itr = new StringTokenizer(value.toString());
+            String token;
+            String tuple[];
+
+            while (itr.hasMoreTokens()) {
+                token = itr.nextToken();
+                tuple = token.split(",");
+                custID.set(tuple[3]);
+                custInfo.set(tuple[0] + ",0");
+                context.write(custID, custInfo);
+                // System.out.println(itr.toString());
+            }
+        }
+    }
+
+    public static class TokenizerMapper2
+            extends Mapper<Object, Text, Text, Text> {
+
+        private final static Text transInfo = new Text();
+        private Text custID = new Text();
+
+        public void map(Object key, Text value, Reducer.Context context
+        ) throws IOException, InterruptedException {
+            StringTokenizer itr = new StringTokenizer(value.toString());
+            String token;
+            String tuple[];
+
+            while (itr.hasMoreTokens()) {
+                token = itr.nextToken();
+                tuple = token.split(",");
+                custID.set(tuple[1]);
+                transInfo.set(tuple[2] + ",1" );
+                context.write(custID, transInfo);
+                // System.out.println(itr.toString());
+            }
+        }
+    }
+
+    public static class TransSumReducer
+            extends Reducer<Text, Text, Text, Text> {
+
+        private Text result = new Text();
+
+        public void reduce(Text key, Iterable<Text> values,
+                Context context
+        ) throws IOException, InterruptedException {
+            
+            String outkey = "unknow";
+            String record = "unknow";
+            String[] info = null;
+            String[][] cinfo = null;
+            String[][] tinfo = null;
+            
+            float total;
+            int count = 0;
+            int cCount = 0;
+            int tCount = 0;
+            int countryCode = 0;
+            int[] countCust = null;
+            
+            float[] maxTotal= null;
+            float[] minTotal= null;
+            
+            
+            for (Text val : values) {
+                info = (val.toString()).split(",");
+                if (info[1].equals("0")) {
+                    //alpha only
+                    cinfo[cCount][0] = key.toString();
+                    cinfo[cCount][1] = info[0];
+                    cinfo[cCount][2] = info[1];
+                    cCount++;
+
+                } else {
+
+                    tinfo[tCount][0] = key.toString();
+                    tinfo[tCount][1] = info[0];
+                    tinfo[tCount][2] = info[1];
+                    tCount++;
+
+                }
+            }
+            
+            for(int i=0; i < tCount; i++){
+                for(int j=0; j< cCount; j++){
+                
+                    if (cinfo[i][0].equals(tinfo[j][0])){
+                        
+                        tinfo[j][2] = cinfo[i][1];
+                    
+                    }
+                    
+                }
+            
+            }
+            
+            for(int m=0; m < tCount; m++){
+               
+               countryCode = Integer.parseInt(tinfo[m][2]);
+               total = Float.parseFloat(tinfo[m][1]);
+               
+               
+               float max = 0.0f;
+               float min = 9999.0f;
+               
+               maxTotal = null;
+               minTotal = null;
+               
+                
+                
+               switch(countryCode){ 
+                   case 1: countCust[0]++;
+                   maxTotal[0]=compareMax(total,max);
+                   minTotal[0]= compareMin(total,min);
+                   break;
+                   case 2: countCust[1]++;
+                   maxTotal[1]=compareMax(total,max);
+                   minTotal[1]=compareMin(total,min);                   
+                   break;
+                   case 3: countCust[2]++;
+                   maxTotal[2]=compareMax(total,max);
+                   minTotal[2]=compareMin(total,min);
+                   break;
+                   case 4: countCust[3]++;
+                   maxTotal[3]=compareMax(total,max);
+                   minTotal[3]= compareMin(total,min);
+                   break;
+                   case 5: countCust[4]++;
+                   maxTotal[4]= compareMax(total,max);
+                   minTotal[4]= compareMin(total,min);
+                   break;
+                   case 6: countCust[5]++;
+                   maxTotal[5]= compareMax(total,max);
+                   minTotal[5]= compareMin(total,min);
+                   break;
+                   case 7: countCust[6]++;
+                   maxTotal[6]= compareMax(total,max);
+                   minTotal[6]=compareMin(total,min);
+                   break;
+                   case 8: countCust[7]++;
+                   maxTotal[7]= compareMax(total,max);
+                   minTotal[7]=compareMin(total,min);
+                   break;
+                   case 9: countCust[8]++;
+                   maxTotal[8]= compareMax(total,max);
+                   minTotal[8]=compareMin(total,min);
+                   break;
+                   case 10: countCust[9]++;
+                   maxTotal[9]= compareMax(total,max);
+                   minTotal[9]=compareMin(total,min);
+                   break;
+                       
+                   
+                
+               }
+            }
+            for (int n=0; n < 10; n++){
+            
+                outkey = Integer.toString(n+1);
+                record = countCust[n]+" "+ maxTotal[n]+" "+ minTotal[n];
+            
+            }
+            
+            
+        }
+        public float compareMax(float total, float max){
+        
+            if (total > max){
+
+                max = total;
+            }
+           return max; 
+        
+        }
+
+        public float compareMin(float total, float min){
+        
+            if (total < min){
+
+                min = total;
+            }
+           return min; 
+        
+        }
+        
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        if (args.length != 3) {
+            System.err.println("Usage: query3 <HDFS input file1> <HDFS input file2> <HDFS output file>");
+            System.exit(2);
+        }
+        Job job = new Job(conf, "query3");
+        job.setJarByClass(Query3.class);
+        //job.setMapperClass(TokenizerMapper.class);
+        //job.setMapperClass(TokenizerMapper2.class);
+        //job.setCombinerClass(FloatSumReducer.class);
+        job.setReducerClass(TransSumReducer.class);
+        job.setNumReduceTasks(6);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+
+        MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
+        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper2.class);
+        FileOutputFormat.setOutputPath(job, new Path(args[2]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
