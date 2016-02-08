@@ -1,0 +1,168 @@
+/**
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.apache.hadoop.examples;
+
+
+import java.io.IOException;
+import java.util.StringTokenizer;
+import java.util.Arrays;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.io.LongWritable;
+
+public class Query4 {
+
+    public static class TokenizerMapper
+            extends Mapper<Object, Text, LongWritable, Text> {
+
+        private final static Text info = new Text();
+        private LongWritable countryCode = new LongWritable();
+
+        public void map(Object key, Text value, Reducer.Context context
+        ) throws IOException, InterruptedException {
+            StringTokenizer itr = new StringTokenizer(value.toString());
+            String token;
+            String tuple[];
+            String[][] c = null;
+            String[][] t = null;
+            int cCount = 0;
+            int tCount = 0;
+            String val = null;
+  
+            while (itr.hasMoreTokens()) {
+                token = itr.nextToken();
+                tuple = token.split(",");
+                if(tuple[1].matches("^[A-Za-z]+$"))
+                {
+                    c[cCount][0] = tuple[0]; //custID
+                    c[cCount][1] = tuple[3]; //countryCode
+                    c[cCount][2] = "0";
+                    cCount ++;
+                }
+                else{
+                    t[tCount][0] = tuple[1];  //custID
+                    t[tCount][1] = tuple[2];  //transTotal
+                    t[tCount][2] = "1";       //flag
+                    tCount++;
+                }
+            }
+            
+          for(int i=0; i < cCount; i++){
+              for (int j=0; j < tCount; j++){
+                  if(c[i][0].equals(t[j][0])){
+                      countryCode.set(Long.parseLong(c[i][1]));
+                      val = t[j][0] + "," + t[j][1];
+                      info.set(val);
+                      context.write(countryCode, info);
+                  }                            
+              }                    
+          }  
+        }
+    }
+
+//    public static class TokenizerMapper2
+//            extends Mapper<Object, Text, LongWritable, Text> {
+//
+//        private final static Text transInfo = new Text();
+//        private final LongWritable custID = new LongWritable();
+//
+//        public void map(Object key, Text value, Reducer.Context context
+//        ) throws IOException, InterruptedException {
+//            StringTokenizer itr = new StringTokenizer(value.toString());
+//            String token;
+//            String tuple[];
+//
+//            while (itr.hasMoreTokens()) {
+//                token = itr.nextToken();
+//                tuple = token.split(",");
+//                custID.set(Long.parseLong(tuple[1]));
+//                transInfo.set(tuple[2] + ","+"1" );
+//                context.write(custID, transInfo);
+//                // System.out.println(itr.toString());
+//            }
+//        }
+//    }
+
+    public static class TransTotalReducer
+            extends Reducer<LongWritable, Text, LongWritable, Text> {
+
+        private final Text result = new Text();
+
+        public void reduce(LongWritable key, Iterable<Text> values,
+                Context context
+        ) throws IOException, InterruptedException {
+            
+            
+            String outkey = null;
+            String record = null;
+            String[] info = null;
+            int[] countCust = null;
+            int countryCode = 0;
+            float[] maxTotal= null;
+            float[] minTotal= null;
+            int custCount = 0;
+            float max = Float.MIN_VALUE;
+            float min = Float.MAX_VALUE;
+            
+            for(Text val : values){
+                info = val.toString().split(",");
+                custCount++;
+                if(Float.parseFloat(info[1]) < min){
+                    min = Float.parseFloat(info[1]);
+                }
+                if(Float.parseFloat(info[1]) > max){
+                    max = Float.parseFloat(info[1]);
+                }
+            }
+
+            result.set(custCount + "," + min+","+max);
+            context.write(key, result);
+            
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        if (args.length != 3) {
+            System.err.println("Usage: query4 <HDFS input file1> <HDFS input file2> <HDFS output file>");
+            System.exit(2);
+        }
+        Job job = new Job(conf, "query4");
+        job.setJarByClass(Query4.class);
+        job.setMapperClass(TokenizerMapper.class);
+        job.setMapperClass(TokenizerMapper.class);
+        //job.setCombinerClass(FloatSumReducer.class);
+        job.setReducerClass(TransTotalReducer.class);
+        job.setNumReduceTasks(1);
+        job.setOutputKeyClass(LongWritable.class);
+        job.setOutputValueClass(Text.class);
+
+        MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
+        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper.class);
+        FileOutputFormat.setOutputPath(job, new Path(args[2]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
