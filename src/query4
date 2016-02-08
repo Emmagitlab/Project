@@ -13,6 +13,7 @@
  */
 package org.apache.hadoop.examples;
 
+
 import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.Arrays;
@@ -30,125 +31,131 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.io.LongWritable;
 
 public class Query4 {
 
     public static class TokenizerMapper
-            extends Mapper<Object, Text, Text, Text> {
+            extends Mapper<Object, Text, LongWritable, Text> {
 
-        private final static Text custInfo = new Text();
-        private Text custID = new Text();
-
-        public void map(Object key, Text value, Reducer.Context context
-        ) throws IOException, InterruptedException {
-            StringTokenizer itr = new StringTokenizer(value.toString());
-            String token;
-            String tuple[];
-
-            while (itr.hasMoreTokens()) {
-                token = itr.nextToken();
-                tuple = token.split(",");
-                custID.set(tuple[3]);
-                custInfo.set(tuple[0] + ",0");
-                context.write(custID, custInfo);
-                // System.out.println(itr.toString());
-            }
-        }
-    }
-
-    public static class TokenizerMapper2
-            extends Mapper<Object, Text, Text, Text> {
-
-        private final static Text transInfo = new Text();
-        private Text custID = new Text();
+        private final static Text info = new Text();
+        private LongWritable custID = new LongWritable();
 
         public void map(Object key, Text value, Reducer.Context context
         ) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
             String token;
             String tuple[];
+            String[][] c = null;
+            String[][] t = null;
+            int cCount = 0;
+            int tCount = 0;
+            String val = null;
+  
 
             while (itr.hasMoreTokens()) {
                 token = itr.nextToken();
                 tuple = token.split(",");
-                custID.set(tuple[1]);
-                transInfo.set(tuple[2] + ",1" );
-                context.write(custID, transInfo);
-                // System.out.println(itr.toString());
+                if(tuple[1].matches("^[A-Za-z]+$"))
+                {
+                    c[cCount][0] = tuple[0];
+                    c[cCount][1] = tuple[3];
+                    c[cCount][2] = "0";
+                    cCount ++;
+                    
+                }
+                else{
+                    
+                    t[tCount][0] = tuple[1];
+                    t[tCount][1] = tuple[2];
+                    t[tCount][2] = "1";
+                    tCount++;
+                
+                }
+                
+               
             }
+            
+          for(int i=0; i < cCount; i++){
+          
+              for (int j=0; j < tCount; j++){
+              
+                  if(c[i][0].equals(t[j][0])){
+                      
+                  
+                      t[j][2] = c[i][1];
+                      custID.set(Long.parseLong(t[j][0]));
+                      val = t[j][1] + ","+t[j][2];
+                      info.set(val);
+                      context.write(custID, val);
+                      
+                  
+                  
+                  }
+              
+              
+              }
+          
+          
+          }  
+          
+         
+            
+          
         }
     }
+
+//    public static class TokenizerMapper2
+//            extends Mapper<Object, Text, LongWritable, Text> {
+//
+//        private final static Text transInfo = new Text();
+//        private final LongWritable custID = new LongWritable();
+//
+//        public void map(Object key, Text value, Reducer.Context context
+//        ) throws IOException, InterruptedException {
+//            StringTokenizer itr = new StringTokenizer(value.toString());
+//            String token;
+//            String tuple[];
+//
+//            while (itr.hasMoreTokens()) {
+//                token = itr.nextToken();
+//                tuple = token.split(",");
+//                custID.set(Long.parseLong(tuple[1]));
+//                transInfo.set(tuple[2] + ","+"1" );
+//                context.write(custID, transInfo);
+//                // System.out.println(itr.toString());
+//            }
+//        }
+//    }
 
     public static class TransTotalReducer
-            extends Reducer<Text, Text, Text, Text> {
+            extends Reducer<LongWritable, Text, LongWritable, Text> {
 
         private Text result = new Text();
+        private LongWritable key1 = new LongWritable();
 
         public void reduce(Text key, Iterable<Text> values,
                 Context context
         ) throws IOException, InterruptedException {
             
-            String outkey = "unknow";
-            String record = "unknow";
+            
+            String outkey = null;
+            String record = null;
             String[] info = null;
-            String[][] cinfo = null;
-            String[][] tinfo = null;
-            
-            float total;
-            int count = 0;
-            int cCount = 0;
-            int tCount = 0;
-            int countryCode = 0;
             int[] countCust = null;
-            
+            int countryCode = 0;
             float[] maxTotal= null;
             float[] minTotal= null;
+            float total = 0;
+            float max = 0;
+            float min =9999;
+            
             
             
             for (Text val : values) {
                 info = (val.toString()).split(",");
-                if (info[1].equals("0")) {
-                    //alpha only
-                    cinfo[cCount][0] = key.toString();
-                    cinfo[cCount][1] = info[0];
-                    cinfo[cCount][2] = info[1];
-                    cCount++;
-
-                } else {
-
-                    tinfo[tCount][0] = key.toString();
-                    tinfo[tCount][1] = info[0];
-                    tinfo[tCount][2] = info[1];
-                    tCount++;
-
-                }
-            }
-            
-            for(int i=0; i < tCount; i++){
-                for(int j=0; j< cCount; j++){
-                
-                    if (cinfo[i][0].equals(tinfo[j][0])){
-                        
-                        tinfo[j][2] = cinfo[i][1];
-                    
-                    }
-                    
-                }
-            
-            }
-            
-            for(int m=0; m < tCount; m++){
-               
-               countryCode = Integer.parseInt(tinfo[m][2]);
-               total = Float.parseFloat(tinfo[m][1]);
-               
-               float max = 0.0f;
-               float min = 9999.0f;
-               
-               maxTotal = null;
-               minTotal = null;
-                
-               switch(countryCode){ 
+                countryCode = Integer.parseInt(info[0]);
+                switch(countryCode){ 
                    case 1: countCust[0]++;
                    maxTotal[0]=compareMax(total,max);
                    minTotal[0]= compareMin(total,min);
@@ -189,15 +196,18 @@ public class Query4 {
                    maxTotal[9]= compareMax(total,max);
                    minTotal[9]=compareMin(total,min);
                    break;
-               }
+                }
+                
             }
+            
+
             
             for (int n=0; n < 10; n++){
                 outkey = Integer.toString(n+1);
-                record = countCust[n]+" "+ maxTotal[n]+" "+ minTotal[n];
-                key.set(outkey);
+                record = countCust[n]+","+ maxTotal[n]+","+ minTotal[n];
+                key1.set(Long.parseLong(outkey));
                 result.set(record);
-                context.write(key, result);
+                context.write(key1, result);
             }
             
         }
@@ -236,11 +246,14 @@ public class Query4 {
         //job.setCombinerClass(FloatSumReducer.class);
         job.setReducerClass(TransTotalReducer.class);
         job.setNumReduceTasks(6);
-        job.setOutputKeyClass(Text.class);
+        job.setOutputKeyClass(LongWritable.class);
         job.setOutputValueClass(Text.class);
+        job.setMapOutputKeyClass(LongWritable.class);
+        job.setMapOutputValueClass(Text.class);
+
 
         MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
-        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper2.class);
+        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper.class);
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
