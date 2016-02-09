@@ -1,0 +1,197 @@
+/**
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.apache.hadoop.examples;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.lib.ChainMapper;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class Query5{
+    
+  public static class TokenizerMapper 
+       extends Mapper<Object, Text, IntWritable, Text>{
+    
+    private final Text custInfo = new Text();
+    private final IntWritable custID = new IntWritable();
+  
+    public void map(Object key, Text value, Context context
+                    ) throws IOException, InterruptedException {
+      StringTokenizer itr = new StringTokenizer(value.toString());
+      String token;
+      String tuple[];
+      
+      while (itr.hasMoreTokens()) {
+        token = itr.nextToken();
+        tuple = token.split(",");
+        custID.set(Integer.parseInt(tuple[0]));  //the ID as key out
+        custInfo.set(tuple[1]); //the name as value out
+        context.write(custID, custInfo);
+      }
+    }
+  }
+  
+  public static class TokenizerMapper2 
+       extends Mapper<Object, Text, IntWritable, Text>{
+    
+    private final Text transID = new Text();
+    private final IntWritable custID = new IntWritable();
+   
+    public void map(Object key, Text value, Context context
+                    ) throws IOException, InterruptedException {
+      StringTokenizer itr = new StringTokenizer(value.toString());
+      String token;
+      String tuple[];
+      
+      while (itr.hasMoreTokens()) {
+        token = itr.nextToken();
+        tuple = token.split(",");
+        custID.set(Integer.parseInt(tuple[1]));  //custID as key out
+        transID.set(tuple[0]); //transID as value out
+        context.write(custID, transID);
+	// System.out.println(itr.toString());
+      }
+    }
+  }
+  
+  public static class TransSumReducer 
+       extends Reducer<IntWritable, Text , IntWritable , Text>{
+    private Text result = new Text();
+
+    public void reduce(IntWritable key, Iterable<Text> values, 
+                       Context context
+                       ) throws IOException, InterruptedException {
+      float sum = 0;
+      int count = 0;
+      int outkey = 0;
+      String totalsum = "unknown";
+      String custName = "unknow";
+      String info;
+      Boolean flag = true;
+     
+      for (Text val : values) {
+         info = val.toString();
+         if(flag && info.matches("^[A-Za-z]+$")){   //alpha only is name
+             outkey = key.get();
+             custName = info;
+             flag = false;
+         }else{
+             count++;
+         }
+      }
+      
+      key.set(outkey);
+      result.set(","+custName + "," + count);
+      context.write(key, result);
+    }
+  }
+
+  public static class CustNameMapper 
+       extends Mapper<Object, Text, IntWritable, Text>{
+    
+    private final IntWritable custID = new IntWritable();
+    private final Text minTrans = new Text();
+    private ArrayList<String> results = new ArrayList();
+    private int min = Integer.MAX_VALUE;
+    
+    public void map(Object key, Text value, Context context
+                    ) throws IOException, InterruptedException {
+      StringTokenizer itr = new StringTokenizer(value.toString());
+      String token;
+      String tuple[];
+      
+      while (itr.hasMoreTokens()) {
+        token = itr.nextToken();
+        tuple = token.split(",");
+        if(Integer.parseInt(tuple[2]) < min){
+            results = new ArrayList();
+            results.add(tuple[1]+","+tuple[2]);
+        }else if(Integer.parseInt(tuple[2]) == min){
+            results.add(tuple[1]+","+tuple[2]);
+        }
+      }
+      
+      Iterator<String> rst = results.iterator();
+      while(rst.hasNext()){
+          minTrans.set(rst.next());
+          custID.set(0);
+          context.write(custID, minTrans);
+      }
+    }
+  }
+  
+  public static void main(String[] args) throws Exception {
+     Configuration conf = new Configuration(false);
+     Configuration conf1 = new Configuration(false);
+     if (args.length != 3) {
+      System.err.println("Usage: query5 <HDFS input file1> <HDFS input file2> <HDFS output file>");
+      System.exit(2);
+    }
+    
+    Path toNewMap = new Path("toNextMap"); //the directory in hadoop file system
+     
+    Job job = new Job(conf, "query5");
+    job.setJarByClass(Query5.class);
+    //job.setMapperClass(TokenizerMapper.class);
+    //job.setMapperClass(TokenizerMapper2.class);
+    //job.setCombinerClass(FloatSumReducer.class);
+    job.setReducerClass(TransSumReducer.class);
+    job.setNumReduceTasks(1);
+    job.setOutputKeyClass(IntWritable.class);
+    job.setOutputValueClass(Text.class);
+    
+    MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
+    MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper2.class);
+    FileOutputFormat.setOutputPath(job, toNewMap);
+    //System.exit(job.waitForCompletion(true) ? 0 : 1);
+    
+    Job job1 = new Job(conf1, "query5_1");
+    job1.setJarByClass(Query5.class);
+    job1.setMapperClass(CustNameMapper.class);
+    job1.setNumReduceTasks(0);
+    FileInputFormat.setInputPaths(job1, new Path("./toNextMap/part-r-00000"));
+    job1.setMapOutputKeyClass(IntWritable.class);
+    job1.setMapOutputValueClass(Text.class);
+    FileOutputFormat.setOutputPath(job1, new Path(args[2]));
+    
+    ControlledJob cjb = new ControlledJob(conf);
+    ControlledJob cjb1 = new ControlledJob(conf1);
+    cjb.setJob(job);
+    cjb1.setJob(job1);
+    cjb1.addDependingJob(cjb);
+    System.exit(job1.waitForCompletion(true) ? 0 : 1);
+    
+  }
+}
