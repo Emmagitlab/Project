@@ -1,0 +1,150 @@
+/**
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.apache.hadoop.examples;
+
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
+
+public class Query4 {
+
+    public static class TokenizerMapper
+            extends Mapper<Object, Text, IntWritable, FloatWritable> {
+
+        private final FloatWritable cInfo = new FloatWritable();
+        private final IntWritable countryCode = new IntWritable();
+        private final Map<Integer, Integer> custInfo = new HashMap<Integer, Integer>();
+        private final ArrayList<String> transInfo = new ArrayList();
+
+        public void setup(Context context) throws IOException{
+            Path pt = new Path("p1_dataset/Customers.csv");  //Location of file in HDFS
+            FileSystem fs = FileSystem.get(new Configuration());
+            BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+            String line;
+            String tuple[];
+            
+            while ((line=br.readLine())!=null){
+               tuple = line.split(",");
+               custInfo.put(Integer.parseInt(tuple[0]), Integer.parseInt(tuple[3]));  //custID + countryCode
+            }
+        }
+        
+        public void map(Object key, Text value, Context context
+        ) throws IOException, InterruptedException {
+            StringTokenizer itr = new StringTokenizer(value.toString());
+            String token;
+            String tuple[];
+            int code;
+  
+            while (itr.hasMoreTokens()) {
+                token = itr.nextToken();
+                tuple = token.split(",");
+                if(tuple[1].matches("^[A-Za-z]+$")) //check if it is a cust name?
+                {
+                    // save the cust talbe info here
+                   // custInfo.add(tuple[0]+"," + tuple[3]); //custID + countryCode
+                }
+                else{  //otherwise it is trans table
+                    // save the trans table info here
+                    //transInfo.add(tuple[1]+","+tuple[2]); //custID + transTotal
+                    code = custInfo.get(Integer.parseInt(tuple[1]));
+                    countryCode.set(code);
+                    cInfo.set(Float.parseFloat(tuple[2]));
+                    context.write(countryCode, cInfo);
+                }
+            }                                    
+        }
+    }
+
+    public static class TransTotalReducer
+            extends Reducer<IntWritable, FloatWritable, IntWritable, Text> {
+
+        private final Text result = new Text();
+        private final IntWritable outkey = new IntWritable();
+
+        public void reduce(IntWritable key, Iterable<FloatWritable> values,
+                Context context
+        ) throws IOException, InterruptedException {
+            Float transTotal;
+            int custCount = 0;
+            float max = Float.MIN_VALUE;
+            float min = Float.MAX_VALUE;
+            
+            for(FloatWritable val : values){
+                custCount++;
+                transTotal = val.get();
+                if(transTotal < min){
+                    min = transTotal;
+                }
+                if(transTotal > max){
+                    max = transTotal;
+                }
+            }
+            
+            outkey.set(key.get());  //set key as country code output to result
+            result.set("; "+custCount + ", " + min+", "+max);
+            context.write(outkey, result);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        if (args.length != 3) {
+            System.err.println("Usage: query4 <HDFS input file1> <HDFS input file2> <HDFS output file>");
+            System.exit(2);
+        }
+        Job job = new Job(conf, "query4");
+        job.setJarByClass(Query4.class);
+        job.setMapperClass(TokenizerMapper.class);
+        //job.setMapperClass(TokenizerMapper.class);
+        //job.setCombinerClass(FloatSumReducer.class);
+        job.setReducerClass(TransTotalReducer.class);
+        job.setNumReduceTasks(1);       
+        job.setMapOutputKeyClass(IntWritable.class);
+        job.setMapOutputValueClass(FloatWritable.class);
+        job.setOutputKeyClass(IntWritable.class);
+        job.setOutputValueClass(Text.class);
+
+        job.setInputFormatClass(TextInputFormat.class);
+        FileInputFormat.setInputPaths(job, new Path(args[0]),new Path(args[1]));
+//        MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
+//        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper.class);
+        FileOutputFormat.setOutputPath(job, new Path(args[2]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
