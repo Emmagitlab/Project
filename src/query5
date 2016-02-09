@@ -161,7 +161,7 @@ public class Query5{
     }
     
     Path toNewMap = new Path("toNextMap"); //the directory in hadoop file system
-     
+    
     Job job = new Job(conf, "query5");
     job.setJarByClass(Query5.class);
     //job.setMapperClass(TokenizerMapper.class);
@@ -181,7 +181,9 @@ public class Query5{
     job1.setJarByClass(Query5.class);
     job1.setMapperClass(CustNameMapper.class);
     job1.setNumReduceTasks(0);
-    FileInputFormat.setInputPaths(job1, new Path("./toNextMap/part-r-00000"));
+    if(job.waitForCompletion(true)){
+        FileInputFormat.setInputPaths(job1, new Path("toNextMap/part-r-00000"));
+    }
     job1.setMapOutputKeyClass(IntWritable.class);
     job1.setMapOutputValueClass(Text.class);
     FileOutputFormat.setOutputPath(job1, new Path(args[2]));
