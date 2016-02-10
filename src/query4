@@ -14,11 +14,18 @@
 package org.apache.hadoop.examples;
 
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -32,205 +39,87 @@ import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 
 public class Query4 {
 
     public static class TokenizerMapper
-            extends Mapper<Object, Text, LongWritable, Text> {
+            extends Mapper<Object, Text, IntWritable, FloatWritable> {
 
-        private final static Text info = new Text();
-        private LongWritable custID = new LongWritable();
+        private final FloatWritable cInfo = new FloatWritable();
+        private final IntWritable countryCode = new IntWritable();
+        private final Map<Integer, Integer> custInfo = new HashMap<Integer, Integer>();
+        private final ArrayList<String> transInfo = new ArrayList();
 
-        public void map(Object key, Text value, Reducer.Context context
+        public void setup(Context context) throws IOException{
+            Path pt = new Path("p1_dataset/Customers.csv");  //Location of file in HDFS
+            FileSystem fs = FileSystem.get(new Configuration());
+            BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(pt)));
+            String line;
+            String tuple[];
+            
+            while ((line=br.readLine())!=null){
+               tuple = line.split(",");
+               custInfo.put(Integer.parseInt(tuple[0]), Integer.parseInt(tuple[3]));  //custID + countryCode
+            }
+        }
+        
+        public void map(Object key, Text value, Context context
         ) throws IOException, InterruptedException {
             StringTokenizer itr = new StringTokenizer(value.toString());
             String token;
             String tuple[];
-            String[][] c = null;
-            String[][] t = null;
-            int cCount = 0;
-            int tCount = 0;
-            String val = null;
+            int code;
   
-
             while (itr.hasMoreTokens()) {
                 token = itr.nextToken();
                 tuple = token.split(",");
-                if(tuple[1].matches("^[A-Za-z]+$"))
+                if(tuple[1].matches("^[A-Za-z]+$")) //check if it is a cust name?
                 {
-                    c[cCount][0] = tuple[0];
-                    c[cCount][1] = tuple[3];
-                    c[cCount][2] = "0";
-                    cCount ++;
-                    
+                    // save the cust talbe info here
+                   // custInfo.add(tuple[0]+"," + tuple[3]); //custID + countryCode
                 }
-                else{
-                    
-                    t[tCount][0] = tuple[1];
-                    t[tCount][1] = tuple[2];
-                    t[tCount][2] = "1";
-                    tCount++;
-                
+                else{  //otherwise it is trans table
+                    // save the trans table info here
+                    //transInfo.add(tuple[1]+","+tuple[2]); //custID + transTotal
+                    code = custInfo.get(Integer.parseInt(tuple[1]));
+                    countryCode.set(code);
+                    cInfo.set(Float.parseFloat(tuple[2]));
+                    context.write(countryCode, cInfo);
                 }
-                
-               
-            }
-            
-          for(int i=0; i < cCount; i++){
-          
-              for (int j=0; j < tCount; j++){
-              
-                  if(c[i][0].equals(t[j][0])){
-                      
-                  
-                      t[j][2] = c[i][1];
-                      custID.set(Long.parseLong(t[j][0]));
-                      val = t[j][1] + ","+t[j][2];
-                      info.set(val);
-                      context.write(custID, val);
-                      
-                  
-                  
-                  }
-              
-              
-              }
-          
-          
-          }  
-          
-         
-            
-          
+            }                                    
         }
     }
 
-//    public static class TokenizerMapper2
-//            extends Mapper<Object, Text, LongWritable, Text> {
-//
-//        private final static Text transInfo = new Text();
-//        private final LongWritable custID = new LongWritable();
-//
-//        public void map(Object key, Text value, Reducer.Context context
-//        ) throws IOException, InterruptedException {
-//            StringTokenizer itr = new StringTokenizer(value.toString());
-//            String token;
-//            String tuple[];
-//
-//            while (itr.hasMoreTokens()) {
-//                token = itr.nextToken();
-//                tuple = token.split(",");
-//                custID.set(Long.parseLong(tuple[1]));
-//                transInfo.set(tuple[2] + ","+"1" );
-//                context.write(custID, transInfo);
-//                // System.out.println(itr.toString());
-//            }
-//        }
-//    }
-
     public static class TransTotalReducer
-            extends Reducer<LongWritable, Text, LongWritable, Text> {
+            extends Reducer<IntWritable, FloatWritable, IntWritable, Text> {
 
-        private Text result = new Text();
-        private LongWritable key1 = new LongWritable();
+        private final Text result = new Text();
+        private final IntWritable outkey = new IntWritable();
 
-        public void reduce(Text key, Iterable<Text> values,
+        public void reduce(IntWritable key, Iterable<FloatWritable> values,
                 Context context
         ) throws IOException, InterruptedException {
+            Float transTotal;
+            int custCount = 0;
+            float max = Float.MIN_VALUE;
+            float min = Float.MAX_VALUE;
             
-            
-            String outkey = null;
-            String record = null;
-            String[] info = null;
-            int[] countCust = null;
-            int countryCode = 0;
-            float[] maxTotal= null;
-            float[] minTotal= null;
-            float total = 0;
-            float max = 0;
-            float min =9999;
-            
-            
-            
-            for (Text val : values) {
-                info = (val.toString()).split(",");
-                countryCode = Integer.parseInt(info[0]);
-                switch(countryCode){ 
-                   case 1: countCust[0]++;
-                   maxTotal[0]=compareMax(total,max);
-                   minTotal[0]= compareMin(total,min);
-                   break;
-                   case 2: countCust[1]++;
-                   maxTotal[1]=compareMax(total,max);
-                   minTotal[1]=compareMin(total,min);                   
-                   break;
-                   case 3: countCust[2]++;
-                   maxTotal[2]=compareMax(total,max);
-                   minTotal[2]=compareMin(total,min);
-                   break;
-                   case 4: countCust[3]++;
-                   maxTotal[3]=compareMax(total,max);
-                   minTotal[3]= compareMin(total,min);
-                   break;
-                   case 5: countCust[4]++;
-                   maxTotal[4]= compareMax(total,max);
-                   minTotal[4]= compareMin(total,min);
-                   break;
-                   case 6: countCust[5]++;
-                   maxTotal[5]= compareMax(total,max);
-                   minTotal[5]= compareMin(total,min);
-                   break;
-                   case 7: countCust[6]++;
-                   maxTotal[6]= compareMax(total,max);
-                   minTotal[6]=compareMin(total,min);
-                   break;
-                   case 8: countCust[7]++;
-                   maxTotal[7]= compareMax(total,max);
-                   minTotal[7]=compareMin(total,min);
-                   break;
-                   case 9: countCust[8]++;
-                   maxTotal[8]= compareMax(total,max);
-                   minTotal[8]=compareMin(total,min);
-                   break;
-                   case 10: countCust[9]++;
-                   maxTotal[9]= compareMax(total,max);
-                   minTotal[9]=compareMin(total,min);
-                   break;
+            for(FloatWritable val : values){
+                custCount++;
+                transTotal = val.get();
+                if(transTotal < min){
+                    min = transTotal;
                 }
-                
+                if(transTotal > max){
+                    max = transTotal;
+                }
             }
             
-
-            
-            for (int n=0; n < 10; n++){
-                outkey = Integer.toString(n+1);
-                record = countCust[n]+","+ maxTotal[n]+","+ minTotal[n];
-                key1.set(Long.parseLong(outkey));
-                result.set(record);
-                context.write(key1, result);
-            }
-            
+            outkey.set(key.get());  //set key as country code output to result
+            result.set("; "+custCount + ", " + min+", "+max);
+            context.write(outkey, result);
         }
-        public float compareMax(float total, float max){
-        
-            if (total > max){
-
-                max = total;
-            }
-           return max; 
-        
-        }
-
-        public float compareMin(float total, float min){
-        
-            if (total < min){
-
-                min = total;
-            }
-           return min; 
-        
-        }
-        
     }
 
     public static void main(String[] args) throws Exception {
@@ -241,19 +130,20 @@ public class Query4 {
         }
         Job job = new Job(conf, "query4");
         job.setJarByClass(Query4.class);
+        job.setMapperClass(TokenizerMapper.class);
         //job.setMapperClass(TokenizerMapper.class);
-        //job.setMapperClass(TokenizerMapper2.class);
         //job.setCombinerClass(FloatSumReducer.class);
         job.setReducerClass(TransTotalReducer.class);
-        job.setNumReduceTasks(6);
-        job.setOutputKeyClass(LongWritable.class);
+        job.setNumReduceTasks(1);       
+        job.setMapOutputKeyClass(IntWritable.class);
+        job.setMapOutputValueClass(FloatWritable.class);
+        job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(Text.class);
-        job.setMapOutputKeyClass(LongWritable.class);
-        job.setMapOutputValueClass(Text.class);
 
-
-        MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
-        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper.class);
+        job.setInputFormatClass(TextInputFormat.class);
+        FileInputFormat.setInputPaths(job, new Path(args[0]),new Path(args[1]));
+//        MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, TokenizerMapper.class);
+//        MultipleInputs.addInputPath(job, new Path(args[1]), TextInputFormat.class, TokenizerMapper.class);
         FileOutputFormat.setOutputPath(job, new Path(args[2]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
