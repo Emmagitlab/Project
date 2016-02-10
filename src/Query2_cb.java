@@ -32,10 +32,10 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class Query2_cb{
 
   public static class TokenizerMapper 
-       extends Mapper<Object, Text, Text, FloatWritable>{
+       extends Mapper<Object, Text, IntWritable, Text>{
     
-    private final static FloatWritable transTotal = new FloatWritable();
-    private Text custID = new Text();
+    private final Text transTotal = new Text();
+    private IntWritable custID = new IntWritable();
    
 	/**
 	* key:
@@ -51,31 +51,53 @@ public class Query2_cb{
       while (itr.hasMoreTokens()) {
         token = itr.nextToken();
         tuple = token.split(",");
-        custID.set(tuple[1]);
-        transTotal.set(Float.parseFloat(tuple[2]));
+        custID.set(Integer.parseInt(tuple[1]));
+        transTotal.set("1,"+tuple[2]);   //add the one and transSum
         context.write(custID, transTotal);
 	// System.out.println(itr.toString());
       }
     }
   }
   
+//   public static class CustCombiner 
+//       extends Reducer<Text, FloatWritable , Text , Text>{
+//    private Text result = new Text();
+//
+//    public void reduce(Text key, Iterable<FloatWritable> values, 
+//                       Context context
+//                       ) throws IOException, InterruptedException {
+//      float sum = 0;
+//      int count = 0;
+//      String outkey;
+//      for (FloatWritable val : values) {
+//         sum += val.get();
+//         count++;
+//      }
+//      result.set(count + "," + sum);  //tuple[0] + tuple[1] for the reducer
+//      //key.set(outkey);
+//      //result.set(sum);
+//      context.write(key, result);
+//    }
+//  }
+  
   public static class FloatSumReducer 
-       extends Reducer<Text, FloatWritable , Text , FloatWritable>{
-    private FloatWritable result = new FloatWritable();
+       extends Reducer<IntWritable, Text , IntWritable , Text>{
+    private Text result = new Text();
 
-    public void reduce(Text key, Iterable<FloatWritable> values, 
+    public void reduce(IntWritable key, Iterable<Text> values, 
                        Context context
                        ) throws IOException, InterruptedException {
       float sum = 0;
       int count = 0;
-      String outkey;
-      for (FloatWritable val : values) {
-         sum += val.get();
-         count++;
+      String tuple[];
+      for (Text val : values) {
+         tuple = val.toString().split(",");
+         sum += Float.parseFloat(tuple[1]);
+         count += Integer.parseInt(tuple[0]);
       }
-      outkey = key.toString() + ", " + count;
-      key.set(outkey);
-      result.set(sum);
+      // outkey = key.toString() + ", " + count;
+      // key.set(outkey);
+      result.set(count + "," + sum);
       context.write(key, result);
     }
   }
@@ -91,9 +113,11 @@ public class Query2_cb{
     job.setMapperClass(TokenizerMapper.class);
     job.setCombinerClass(FloatSumReducer.class);
     job.setReducerClass(FloatSumReducer.class);
-    job.setOutputKeyClass(Text.class);
+    job.setOutputKeyClass(IntWritable.class);
     job.setNumReduceTasks(6);
-    job.setOutputValueClass(FloatWritable.class);
+    job.setOutputValueClass(Text.class);
+    job.setMapOutputKeyClass(IntWritable.class);
+    job.setMapOutputValueClass(Text.class);
     
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
