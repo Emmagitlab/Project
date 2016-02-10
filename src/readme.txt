@@ -12,7 +12,7 @@ Date: Feb/10/2016
 Note:command line > bash generate_upload.sh
 
 3.1 Please excute > bash build.sh to compile Query1.java
-and > bash run.sh to get result.(All the records end with 1 as value, 1 has no specific meaning, for us to check result.)
+and > bash run.sh to get result.
 Note:command line > bash *.sh
 
 3.2 Please excute > bash build2.sh to compile Query2.java and > bash run2.sh to get result for result without combiner. 
