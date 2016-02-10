@@ -83,10 +83,10 @@ public class Query2_cb{
   public static void main(String[] args) throws Exception {
     Configuration conf = new Configuration();
     if (args.length != 2) {
-      System.err.println("Usage: query2 <HDFS input file> <HDFS output file>");
+      System.err.println("Usage: query2_cb <HDFS input file> <HDFS output file>");
       System.exit(2);
     }
-    Job job = new Job(conf, "query2");
+    Job job = new Job(conf, "query2_cb");
     job.setJarByClass(Query2_cb.class);
     job.setMapperClass(TokenizerMapper.class);
     job.setCombinerClass(FloatSumReducer.class);
