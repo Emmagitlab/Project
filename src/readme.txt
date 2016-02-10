@@ -1,3 +1,8 @@
+Team_10
+CS561 hw1
+Create by: Fangyu Lin, Mei Yang
+Date: Feb/10/2016
+
 1.Create Datasets: DB.java
    > Javac DB.java  //compile the java file
    > Java DB   //run class file
