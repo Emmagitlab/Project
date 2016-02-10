@@ -37,9 +37,9 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class Query1{
 
   public static class TokenizerMapper 
-       extends Mapper<Object, Text, Text, IntWritable>{
+       extends Mapper<Object, Text, Text, Text>{
     
-    private final static IntWritable one = new IntWritable(1);
+    private final static Text one = new Text();
     private Text word = new Text();
 
 	/**
@@ -81,7 +81,7 @@ public class Query1{
     // job.setOutputKeyClass(Text.class);
     job.setNumReduceTasks(0);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(IntWritable.class);
+    job.setOutputValueClass(Text.class);
     FileInputFormat.addInputPath(job, new Path(args[0]));
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
     System.exit(job.waitForCompletion(true) ? 0 : 1);
