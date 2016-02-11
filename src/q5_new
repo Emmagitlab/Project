@@ -163,22 +163,24 @@ public class Query5{
   }
   
   public static class minTransReducer 
-       extends Reducer<IntWritable, Text , IntWritable , Text>{
+       extends Reducer<IntWritable, Text , Text , Text>{
     private Text result = new Text();
     private int minTran = Integer.MAX_VALUE;
     private ArrayList<String> nameList = new ArrayList();
+    private Text outkey = new Text();
     
     public void reduce(IntWritable key, Iterable<Text> values, 
                        Context context
                        ) throws IOException, InterruptedException {
-      int outkey = 0;
-      String info[];
+      
+     // String info[];
+     String tempkey = "";
      
       for (Text val : values) {
-         info = val.toString().split(",");
+         String info[] = val.toString().split(",");
          if((info.length>=2) && Integer.parseInt(info[1])<minTran){   //alpha only is name
              minTran = Integer.parseInt(info[1]);
-             nameList = new ArrayList();  //final new min, clear before result
+             nameList = new ArrayList();      //find new min, clear before result
              nameList.add(info[0]+", "+info[1]);  //custname + transTotal
          }else if((info.length>=2) && Integer.parseInt(info[1])==minTran){
              nameList.add(info[0]+", "+info[1]);  //custname + transTotal
@@ -187,9 +189,9 @@ public class Query5{
       
       Iterator<String> itr = nameList.iterator();
       while(itr.hasNext()){
-          key.set(outkey);
+          outkey.set(tempkey);
           result.set(itr.next());
-          context.write(key, result);
+          context.write(outkey, result);
       }
 //      key.set(outkey);
 //      result.set(","+custName + "," + count);
