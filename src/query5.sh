@@ -10,4 +10,4 @@ jarfile="/usr/share/hadoop/contrib/streaming/hadoop-streaming-1.2.1.jar"
 
 hadoop fs -rmr $outfile
 
-hadoop jar $jarfile -D mapred.reduce.tasks=1 -file $mapfile -mapper $mapfile -file $redfile -reducer $redfile -input $infile1 $infile2 -output $outfile
+hadoop jar $jarfile -D mapred.reduce.tasks=6 -file $mapfile -mapper $mapfile -file $redfile -reducer $redfile -input $infile1 $infile2 -output $outfile
