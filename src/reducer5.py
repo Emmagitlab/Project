@@ -7,7 +7,6 @@ import sys
 custName = None
 custID = "-1"
 count = 0
-code = "5"
 
 # input comes from STDIN
 for line in sys.stdin:
@@ -27,15 +26,18 @@ for line in sys.stdin:
 
     # this IF-switch only works because Hadoop sorts map output
     # by key (here: word) before it is passed to the reducer
-
     if len(tuples)==3:
-	if count!=0 and tuple[3]==code:
+	custID = tuple[0]
+	custName = tuple[1]
+
+    if len(tuples)==2 and tuples[0]==custID:
+	count++
+    elif len(tuples)==3:
+	if count!=0:
 		print '%s,%s,%s' % (custID, custName, count)
 	custID = tuple[0]
 	custName = tuple[1]
 	count = 0
-    else if len(tuples)==2 and tuples[0]==custID:
-	count+=1
     
     # if current_word == word:
     #     current_count += count
