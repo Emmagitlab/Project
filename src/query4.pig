@@ -7,13 +7,17 @@ tranfiled = FOREACH tran GENERATE tid, cid;
 groupit = GROUP tranfiled BY (cid);
 countit = FOREACH groupit GENERATE group, COUNT(tranfiled.tid) AS tcount;
 jointwo = JOIN countit BY group, custfiled BY id;
-projit = FOREACH jointwo GENERATE custfiled.name AS newname, countit.tcount AS tcc;
+projit = FOREACH jointwo GENERATE custfiled::name AS newname, countit::tcount AS tcc;
 
 moregroup = GROUP projit ALL;
-results = FOREACH moregroup GENERATE projit.newname, MIN(projit.tcc);
+results = FOREACH moregroup GENERATE MIN(projit.tcc) AS themin; /*, projit.newname;*/
+lastfilt = FILTER projit BY tcc == results.themin;
+
+/* fileit = FILTER projit BY projit.tcc==results.mincc; */
+/* lastone = FOREACH fileit GENERATE projit.newname, projit.tcc;*/
 /*
 jointwo = JOIN tranfiled BY cid, custfiled BY id USING 'replicated';
 projit = FOREACH jointwo GENERATE tranfiled.tid AS newtid, tranfiled.cid AS newcid, custfiled.name AS cname;
 results = FOREACH groupit GENERATE group, projit.cname, COUNT(projit.newtid);
 */
-STORE results INTO 'hw2_q4_out' USING PigStorage(',');
+STORE lastfilt INTO 'hw2_q4_out' USING PigStorage(',');
