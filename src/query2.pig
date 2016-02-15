@@ -9,5 +9,5 @@ results = FOREACH groupit
    GENERATE group AS tkey, COUNT(tranfiled.tid) AS t_count, SUM(tranfiled.ttotal) AS al_count, MIN(tranfiled.items) AS mitt;
 jointwo = JOIN results BY tkey, custfiled BY id;
 lastone = FOREACH jointwo
-   GENERATE custfiled.id, custfiled.name, custfiled.salary, results.t_count, results.al_count, results.mitt;
+   GENERATE custfiled::id AS cid, custfiled::name AS cname, custfiled::salary AS salary, results::t_count AS tct, results::al_count AS allcount, results::mitt AS mtit;
 STORE lastone INTO 'hw2_q2_out' USING PigStorage(',');
