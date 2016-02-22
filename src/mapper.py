@@ -1,5 +1,4 @@
-#__author__ = 'T440'
-
+#!/usr/bin/env python
 
 import sys
 for line in sys.stdin:
@@ -27,6 +26,7 @@ for line in sys.stdin:
            # print(keys[0],vals)
              if keys[3] !="-1":
               print('%s,%s,%s,%s,%s' % (keyt,keyc,name,trans,countrycode))
+
 
 
 

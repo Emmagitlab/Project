@@ -1,4 +1,4 @@
-#__author__ = 'T440'
+#!/usr/bin/env python
 
 import sys
 
@@ -64,6 +64,7 @@ for line in sys.stdin:
 #     print ('%s\t%s' % (key,currentCount))
 # except:
 #     pass
+
 
 
 
