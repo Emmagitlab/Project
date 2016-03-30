@@ -39,7 +39,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class KMeansClustering{
   public static Map<Integer, Integer[]> seedpoints = new HashMap<Integer, Integer[]>();
   public static int itrcount = 0;
-  public static boolean flagin = true;
   public static boolean endflag = false;
   
   public static class KMeansMapper 
@@ -59,7 +58,7 @@ public class KMeansClustering{
         FileSystem fs = FileSystem.get(new Configuration());
         
         for(int n=0; n<6; n++){
-            thepath = "./KMeans_out" + n + "/part-r-00000";
+            thepath = "./KMeans_out" + n + "/part-r-00000";  //switch to next output file
             pt1 = new Path(thepath);
             if(fs.exists(pt1)){
                 pt = new Path(thepath);
@@ -74,7 +73,7 @@ public class KMeansClustering{
         int kid = 0;
         
         while ((line=br.readLine())!=null){
-            line = line.replaceAll("\\s", "");
+            line = line.replaceAll("\t", ","); //here is the tricky part, the output file will use tab to seperate key and values
             tuple1 = line.split(",");
             if(tuple1.length==3){
                 Integer list[] = new Integer[2];
@@ -88,34 +87,28 @@ public class KMeansClustering{
     
     public void map(Object key, Text value, Context context
                     ) throws IOException, InterruptedException {
-      String prevalue = value.toString().replaceAll("\\s", "");
+      String prevalue = value.toString().replaceAll("\t", ","); //the output file has tab to separate key and values
       StringTokenizer itr = new StringTokenizer(prevalue);
       String token;
       int kmeansID = 1;
       String tuple[];
       float cmin1;
       float min_dis1 = Float.MAX_VALUE;
-      //int kcount = 0;
       
       while (itr.hasMoreTokens()) {
         token = itr.nextToken();
         tuple = token.split(",");
         
         if(tuple.length == 3){
-            if(tuple[0]==""){
+            if(tuple[0]==""||tuple[1]==""||tuple[2]==""){
                 continue;
             }
-            //Integer list[] = new Integer[2];
-            //kmeansID = Integer.parseInt(tuple[0]);
-            //list[0] = Integer.parseInt(tuple[1]);
-            //list[1] = Integer.parseInt(tuple[2]);
-//            seedpoints.put(kmeansID, list);
-            //kmeansID = Integer.parseInt(tuple[0]);
-            seedID.set(Integer.parseInt(tuple[0]));    //centroid seed ID
-            inpoint.set(token);    //centroid x y position 
-            context.write(seedID, inpoint);  //write centroid points to reducer
+            
+            seedID.set(Integer.parseInt(tuple[0]));     //centroid seed ID
+            inpoint.set(token);                  //centroid x y position 
+            context.write(seedID, inpoint);      //write centroid points to reducer
         }else if(tuple.length == 2){
-            if(seedpoints.isEmpty()){
+            if(seedpoints.isEmpty()||tuple[0]==""||tuple[1]==""){
                 //do nothing
             }else{
                 int x1 = Integer.parseInt(tuple[0]);  //x1
@@ -142,8 +135,7 @@ public class KMeansClustering{
             }
         }
       }
-      
-      flagin = false; //the mapper won't read the original centroid again
+
     }
     
     public float distance(Integer[] seed, int x, int y){
@@ -165,8 +157,8 @@ public class KMeansClustering{
                        ) throws IOException, InterruptedException {
       String info;
       String tuples[];
-      int sumofX = 0;
-      int sumofY = 0;
+      double sumofX = 0;  //prevent from buffer overflow, must use double
+      double sumofY = 0;
       int countp = 0;
       int x;
       int y;
@@ -185,7 +177,7 @@ public class KMeansClustering{
          //info = info.replaceAll("\\s", "");
          tuples = info.split(","); 
       
-         if(tuples.length == 3){   //this is from seed points
+         if(tuples.length == 3){   //this is from seed points, only done once
              clustID = Integer.parseInt(tuples[0]);
              savedTuple[0] = Integer.parseInt(tuples[1]);  //save the original x
              savedTuple[1] = Integer.parseInt(tuples[2]);  //save the original y
@@ -193,9 +185,7 @@ public class KMeansClustering{
              newSeed[0] = savedTuple[0];
              newSeed[1] = savedTuple[1];
              pointclust.put(clustID, newSeed);
-//             outseed = key;
-//             result.set("old centroid: " + tuples[1] + "," + tuples[2]);
-//             context.write(outseed, result);
+
          }else if(tuples.length == 2){   //this is from test points
             x = Integer.parseInt(tuples[0]);  //x1
             y = Integer.parseInt(tuples[1]);  //y1
@@ -207,41 +197,13 @@ public class KMeansClustering{
       }
       
       if(countp!=0){
-        avgX = sumofX/countp;
-        avgY = sumofY/countp;
-//        savedTuple = seedpoints.get(clustID);
-        if(savedTuple==null){
-            //do nothing
-        }else{
-            clustID = Integer.parseInt(key.toString());
-            if((Math.abs(avgX - savedTuple[0]) > 5) || (Math.abs(avgY - savedTuple[1]) > 5)){ //treshold
-                Integer[] ttp = pointclust.get(clustID);  
-                ttp[0] = avgX;
-                ttp[1] = avgY;
-                pointclust.put(clustID, ttp);  //update the new seedpoints
-                outseed.set(clustID);
-                result.set("," + avgX + "," + avgY);
-                context.write(outseed, result);  //write out to next MapReduce
-            }
-        }
-      }else if(countp==0){  //if there is no closest points
-          Integer[] ttp1 = pointclust.get(clustID);
-//          seedpoints.put(clustID, ttp1);
-          outseed.set(clustID);
-          result.set("," + ttp1[0] + "," + ttp1[1]);
-          context.write(outseed, result);
+        avgX = (int)(sumofX/countp);
+        avgY = (int)(sumofY/countp);
+        clustID = Integer.parseInt(key.toString());
+        outseed.set(clustID);
+        result.set(avgX + "," + avgY);   //change here
+        context.write(outseed, result);  //write out to next MapReduce 
       }
-      
-//      for(int k=0; k<pointclust.size();k++){
-//          Integer[] temp = pointclust.get(k);
-//          if(temp==null){
-//              continue;
-//          }else{
-//              outseed.set(k);
-//              result.set(","+temp[0]+","+temp[1]);
-//              context.write(outseed, result);
-//          }
-//      }
     } //end of reducer function
   }
   
@@ -249,7 +211,7 @@ public class KMeansClustering{
      Configuration conf = new Configuration(false);
      int n = 1;
      
-     if (args.length != 3) {
+    if (args.length != 3) {
       System.err.println("Usage: KMeansClustering <HDFS input file1> <HDFS input file2> <HDFS output file>");
       System.exit(2);
     }
@@ -259,7 +221,7 @@ public class KMeansClustering{
     job.setMapperClass(KMeansMapper.class);
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(Text.class);
-    //job.setCombinerClass(TransSumReducer.class);
+    job.setCombinerClass(KMeansReducer.class);
     job.setReducerClass(KMeansReducer.class);
     job.setNumReduceTasks(1);
     job.setOutputKeyClass(IntWritable.class);
@@ -283,7 +245,7 @@ public class KMeansClustering{
             job.setMapperClass(KMeansMapper.class);
             job.setMapOutputKeyClass(IntWritable.class);
             job.setMapOutputValueClass(Text.class);
-            //job.setCombinerClass(TransSumReducer.class);
+            job.setCombinerClass(KMeansReducer.class);
             job.setReducerClass(KMeansReducer.class);
             job.setNumReduceTasks(1);
             job.setOutputKeyClass(IntWritable.class);
@@ -292,9 +254,10 @@ public class KMeansClustering{
             MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, KMeansMapper.class);
             MultipleInputs.addInputPath(job, input2, TextInputFormat.class, KMeansMapper.class);
             FileOutputFormat.setOutputPath(job, new Path("./KMeans_out"+n));
-            n++;
+            n++;  //increment the iteration
         }
     }
+    
     System.exit(job.waitForCompletion(true) ? 0 : 1);
     
   }
