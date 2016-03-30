@@ -80,8 +80,8 @@ public class SpatialJoin {
                 else{ 
                     x = Integer.parseInt(tuple[1]);
                     y = Integer.parseInt(tuple[2]); 
-                    areaX = x%20==0?x/20:x/20+1;
-                    areaY = y%20==0?y/20:y/20+1;
+                    areaX = x%2000==0?x/2000:x/2000+1;
+                    areaY = y%2000==0?y/2000:y/2000+1;
                     area2 = areaX+5*(areaY-1);
                     k.set(area2+"");
                     output.set("2" + "," + tuple[0] + "," + tuple[1] + "," + tuple[2] + "," + tuple[3] + "," + tuple[4]);
