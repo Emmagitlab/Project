@@ -49,7 +49,7 @@ public class GenerateDB3 {
         cWriter.flush();
         cWriter.close();
 
-        for(int j = 1; j <= 100; j++ ){ //total 9000000 lines to generate 100MB
+        for(int j = 1; j <= 9000000; j++ ){ //total 9000000 lines to generate 100MB
             px = randomInt(0, 100001);
             py = randomInt(0, 100001);
             p_record = px + "," + py;
