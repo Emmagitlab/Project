@@ -6,10 +6,9 @@ jarfile="KMeansClustering.jar"
 input1="./p4_dataset/2DPoints.csv"
 input2="./p4_dataset/KSeed.csv"
 output="./KMeans_out0"
-output1="./KMeans_out1"
-output2="./KMeans_out2"
+outputall="./KMeans_out*"
 
-hadoop fs -rmr $output
-hadoop fs -rmr $output1
-hadoop fs -rmr $output2
+
+hadoop fs -rmr $outputall
+
 hadoop jar ./$jarfile $packname $input1 $input2 $output
