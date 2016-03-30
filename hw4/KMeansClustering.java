@@ -105,13 +105,13 @@ public class KMeansClustering{
             if(tuple[0]==""){
                 continue;
             }
-            Integer list[] = new Integer[2];
-            kmeansID = Integer.parseInt(tuple[0]);
-            list[0] = Integer.parseInt(tuple[1]);
-            list[1] = Integer.parseInt(tuple[2]);
-            seedpoints.put(kmeansID, list);
+            //Integer list[] = new Integer[2];
             //kmeansID = Integer.parseInt(tuple[0]);
-            seedID.set(kmeansID);    //centroid seed ID
+            //list[0] = Integer.parseInt(tuple[1]);
+            //list[1] = Integer.parseInt(tuple[2]);
+//            seedpoints.put(kmeansID, list);
+            //kmeansID = Integer.parseInt(tuple[0]);
+            seedID.set(Integer.parseInt(tuple[0]));    //centroid seed ID
             inpoint.set(token);    //centroid x y position 
             context.write(seedID, inpoint);  //write centroid points to reducer
         }else if(tuple.length == 2){
@@ -150,7 +150,7 @@ public class KMeansClustering{
         float r;
         int kx = seed[0];
         int ky = seed[1];
-        r = (float)Math.sqrt(Math.pow(kx-x, 2.0)+Math.pow(ky-y, 2.0));
+        r = (float)Math.sqrt(Math.pow(Math.abs(kx-x), 2.0)+Math.pow(Math.abs(ky-y), 2.0));
         return r;
     }
   }
@@ -160,15 +160,9 @@ public class KMeansClustering{
     private Text result = new Text();
     private IntWritable outseed = new IntWritable();
     private Map<Integer, Integer[]> pointclust = new HashMap<Integer, Integer[]>();
-    private Iterable<Text> savedVal;
-    private Context savedCont;
-    private IntWritable savedKey;
     
     public void reduce(IntWritable key, Iterable<Text> values, Context context
                        ) throws IOException, InterruptedException {
-      savedKey = key;
-      savedVal = values;
-      savedCont = context;
       String info;
       String tuples[];
       int sumofX = 0;
@@ -188,7 +182,7 @@ public class KMeansClustering{
        */
       for (Text val : values) {
          info = val.toString();
-         info = info.replaceAll("\\s", "");
+         //info = info.replaceAll("\\s", "");
          tuples = info.split(","); 
       
          if(tuples.length == 3){   //this is from seed points
@@ -219,8 +213,8 @@ public class KMeansClustering{
         if(savedTuple==null){
             //do nothing
         }else{
-            if((avgX - savedTuple[0] > 5) || (avgY - savedTuple[1] > 5)){ //treshold
-                clustID = Integer.parseInt(key.toString());
+            clustID = Integer.parseInt(key.toString());
+            if((Math.abs(avgX - savedTuple[0]) > 5) || (Math.abs(avgY - savedTuple[1]) > 5)){ //treshold
                 Integer[] ttp = pointclust.get(clustID);  
                 ttp[0] = avgX;
                 ttp[1] = avgY;
@@ -230,8 +224,7 @@ public class KMeansClustering{
                 context.write(outseed, result);  //write out to next MapReduce
             }
         }
-      }
-      else if(countp==0){  //if there is no closest points
+      }else if(countp==0){  //if there is no closest points
           Integer[] ttp1 = pointclust.get(clustID);
 //          seedpoints.put(clustID, ttp1);
           outseed.set(clustID);
@@ -249,7 +242,6 @@ public class KMeansClustering{
 //              context.write(outseed, result);
 //          }
 //      }
-      
     } //end of reducer function
   }
   
@@ -278,7 +270,13 @@ public class KMeansClustering{
     FileOutputFormat.setOutputPath(job, new Path(args[2]));
     
     if(job.waitForCompletion(true)){
-        while(job.waitForCompletion(true) && n<3){
+        while(job.waitForCompletion(true) && n<6){
+            Path input2 = new Path("./KMeans_out"+(n-1)+"/part-r-00000");
+            FileSystem fs1 = FileSystem.get(new Configuration());
+            if(!fs1.exists(input2)){  //if there is no output file, means all seed points keep no change, so exit savely
+                System.exit(job.waitForCompletion(true) ? 0 : 1);
+            }
+            
             Configuration conf1 = new Configuration(false);
             job = new Job(conf1, "K_Means_"+n);
             job.setJarByClass(KMeansClustering.class);
@@ -292,7 +290,7 @@ public class KMeansClustering{
             job.setOutputValueClass(Text.class);
 
             MultipleInputs.addInputPath(job, new Path(args[0]), TextInputFormat.class, KMeansMapper.class);
-            MultipleInputs.addInputPath(job, new Path("./KMeans_out"+(n-1)+"/part-r-00000"), TextInputFormat.class, KMeansMapper.class);
+            MultipleInputs.addInputPath(job, input2, TextInputFormat.class, KMeansMapper.class);
             FileOutputFormat.setOutputPath(job, new Path("./KMeans_out"+n));
             n++;
         }
