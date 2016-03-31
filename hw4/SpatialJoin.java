@@ -6,30 +6,23 @@
 package org.apache.hadoop.examples;
 
 /**
- *
- * @author hadoop
+ * CS561 Project4 
+ * Team 10
+ * @author Fangyu Lin, Mei Yang
+ * @date Mar/28/2016
  */
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.HashMap;
-import java.util.Map;
-import static javax.management.Query.value;
 import javax.swing.JOptionPane;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -48,18 +41,6 @@ public class SpatialJoin {
         private final Text k = new Text();
         public int mx;
         public int my;
-        
-//        public void setup(Context context) throws IOException, InterruptedException {
-//            int flag = JOptionPane.showConfirmDialog(null, "Do you want to enter rectangel?");
-//            if(flag == JOptionPane.YES_OPTION){
-//                x1 = Integer.parseInt(JOptionPane.showInputDialog("Enter a positive int value for 'X1':"));
-//                y1 = Integer.parseInt(JOptionPane.showInputDialog("Enter a positive int value for 'Y1':"));
-//                x2 = Integer.parseInt(JOptionPane.showInputDialog("Enter a positive int value for 'X2':"));
-//                y2 = Integer.parseInt(JOptionPane.showInputDialog("Enter a positive int value for 'Y2':"));
-//            }else{
-//                x1 = x2 = y1 = y2 = -1;
-//            }
-//        }
 
         public void map(Object key, Text value, Context context
         ) throws IOException, InterruptedException {
@@ -128,7 +109,7 @@ public class SpatialJoin {
 
         private final Text result = new Text();
         private final Text outkey = new Text();
-//        @SuppressWarnings("empty-statement")
+
         public void reduce(Text key, Iterable<Text> values,
                 Context context
         ) throws IOException, InterruptedException {
@@ -152,18 +133,13 @@ public class SpatialJoin {
                     String point;
                     point = val.toString();
                     pointList.add(point);         
-//                    result.set(val.toString()+"point");
-//                    context.write(key,result);
                 }else if(tuplev.length == 6) {
                     String rec;
                     rec = val.toString();
                     rectagleList.add(rec);
-//                    result.set(val.toString()+"rec");
-//                    context.write(key,result);
                 }
            }
-//            length1 = pointList.size();
-//            length2 = rectagleList.size();
+
             for(String pvalue: pointList){
                 pointTuple = pvalue.split(",");
                 pointx = Integer.parseInt(pointTuple[1]);
@@ -175,9 +151,7 @@ public class SpatialJoin {
                     recy1 = Integer.parseInt(recTuple[3]);
                     recx2 = Integer.parseInt(recTuple[4]);
                     recy2 = Integer.parseInt(recTuple[5]);
-                    
-//                  result.set(pvalue + " |;| " + rvalue);
-//                  context.write(key, result);
+                   
                     if (pointx >= recx1 && pointy >= recy1 && pointx <= recx2 && pointy <= recy2) {
                         result.set(recTuple[1] + "," + pointx + "," + pointy);
                         context.write(key,result);
@@ -188,42 +162,6 @@ public class SpatialJoin {
             
             pointList.clear();
             rectagleList.clear();
-//            for (int i = 0; i < length1-1; i++) {
-//                pointTuple = pointList.get(i).toString().split(",");
-//                pointl = pointTuple.length;
-//                if(pointl!=3){result.set(pointList.get(i).toString()+";point"); 
-//                context.write(key, result);
-//                continue;}
-//                pointx = Integer.parseInt(pointTuple[1]);
-//                pointy = Integer.parseInt(pointTuple[2]);
-//
-//                for (int j = 0; j < length2-1; j++) {
-//                    recTuple = rectagleList.get(j).toString().split(",");
-//                    recl = recTuple.length;
-//                    if(recl!=6){result.set(recl+"rec"); continue;}
-//                    recx = Integer.parseInt(recTuple[2]);
-//                    recy = Integer.parseInt(recTuple[3]);
-//                    height = Integer.parseInt(recTuple[4]);
-//                    width = Integer.parseInt(recTuple[5]);
-//
-//                    if (pointx >= recx && pointx <= recx + width && pointy <= recy && pointy >= recy - height) {
-//
-//                        result.set(recTuple[2] + "," + pointx + "," + pointy);
-//
-//                    } else {
-//
-//                        result.set("1");
-//                    }
-//
-//                }
-//
-//            }
-            
-            
-//            outkey.set("");  //set key as country code output to result
-            
-//           result.set(length1 + "," +length2);
-          //  context.write(key, result);
             }
     }
 

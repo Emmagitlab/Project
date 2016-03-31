@@ -38,7 +38,7 @@ public class Database {
         }
         writer1.flush();
         writer1.close();
-        for (int i = 0; i < 3700000; i++) {   //original 3600000 to get a 100MB size
+        for (int i = 0; i < 3720000; i++) {   //original 3600000 to get a 100MB size
             String R = "r" + i;
             int top_left_x = randomInt(10001, 1);
             int top_left_y = randomInt(10001, 1);
