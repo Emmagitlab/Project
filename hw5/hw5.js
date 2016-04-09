@@ -118,7 +118,24 @@ printjson(newone.next());
 print("\n====================result for q_9\n");
 var contributions = db.test.find({'name.first':"Alex", 'name.last':"Chen"}, {"_id":0, "contribs":1});
 contlist = contributions.next();
-printjson(contlist);
+theone = contlist.contribs[0];
+thetwo = contlist.contribs[1];
+findone = db.test.find({"contribs":theone},{"_id":0, "name":1});
+findtwo = db.test.find({"contribs":thetwo},{"_id":0, "name":1});
+
+print("{Contribution: \'" + theone +"\',");
+print("People: [");
+while(findone.hasNext()){
+  printjson(findone.next());
+}
+print("]}\n");
+
+print("{Contribution: \'" + thetwo + "\',");
+print("People: [");
+while(findtwo.hasNext()){
+  printjson(findtwo.next());
+}
+print("]}");
 
 //===============================================================================
 // (10) find document first name with "Jo*" and sorted with last name
