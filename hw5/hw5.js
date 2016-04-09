@@ -179,9 +179,9 @@ printjson(temp.next());
 //======================================================================================
 // (16) report the name who have won at least 2 awards in 2001
 print("\n====================result for q_16\n");
-results = db.test.find( $count: {"awards.year":2001}, {"_id":0, "name":1});
+results = db.test.find({"awards.year":2001}, {"_id":0, "name":1});
 while(results.hasNext()){
-  printjson(resluts.next());
+  printjson(results.next());
 }
 
 //=====================================================================================
