@@ -196,7 +196,8 @@ printjson(temp.next());
 //======================================================================================
 // (16) report the name who have won at least 2 awards in 2001
 print("\n====================result for q_16\n");
-results = db.test.find({"awards.year":2001}, {"_id":0, "name":1});
+// results = db.test.find({"awards.year":2001, $or:[{"awards":{$size:2}}, {"awards":{$size:3}},{"awards":{$size:4}},{"awards":{$size:5}}] }, {"_id":0, "name":1});
+results = db.test.find({"awards.year":2001, "awards":{$size:3}}, {"_id":0, "name":1});
 while(results.hasNext()){
   printjson(results.next());
 }
