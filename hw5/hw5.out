@@ -1,9 +1,9 @@
-Script started on Sat 09 Apr 2016 05:51:08 PM EDT
+Script started on Mon 11 Apr 2016 10:48:11 AM EDT
 ]0;hadoop@hadoop-VirtualBox: ~/Documents/hw5hadoop@hadoop-VirtualBox:~/Documents/hw5$ mongo
 MongoDB shell version: 2.0.4
 connecting to: test
 > load("createDB.js");
-> load("hw5.js");
+> lao[1G> la[0K[1G[4C[1G> l[0K[1G[3Coad("hw5.js");
 
 ====================result for q_2
 {
@@ -416,11 +416,13 @@ People: [
 ====================result for q_10
 
 { "_id" : 2, "name" : { "first" : "John", "last" : "McCarthy" } }
+{ "_id" : 9, "name" : { "first" : "James", "last" : "Gosling" } }
 { "_id" : 5, "name" : { "first" : "Ole-Johan", "last" : "Dahl" } }
 { "_id" : 1, "name" : { "first" : "John", "last" : "Backus" } }
 
 ====================result for q_11
 
+[IEEE Computer Society,National Science Foundation,ACM,National Academy of Engineering,Data Processing Management Association, British Computer Society,United States,Norwegian Data Association,IEEE,The Japan Prize Foundation,Free Software Foundation,The Economist,Canada,Inamori Foundation,WPI,NLUUG]
 
 ====================result for q_12
 
@@ -844,7 +846,6 @@ People: [
 
 { "name" : { "first" : "Kristen", "last" : "Nygaard" } }
 { "name" : { "first" : "Ole-Johan", "last" : "Dahl" } }
-{ "name" : { "first" : "Guido", "last" : "van Rossum" } }
 
 ====================result for q_17
 
@@ -922,4 +923,4 @@ People: [
 The total number of documents is: 10
 > quit();
 ]0;hadoop@hadoop-VirtualBox: ~/Documents/hw5hadoop@hadoop-VirtualBox:~/Documents/hw5$ exit
-Script done on Sat 09 Apr 2016 05:51:33 PM EDT
+Script done on Mon 11 Apr 2016 10:48:36 AM EDT
