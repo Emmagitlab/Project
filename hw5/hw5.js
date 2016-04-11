@@ -105,7 +105,7 @@ db.test.update({'name.first':"Guido", 'name.last':"van Rossum"}, {$push:{"contri
 newone = db.test.find({'name.first':"Guido", 'name.last':"van Rossum"});
 printjson(newone.next());
 
-//============================================================================
+//==============================================================================
 // (8) insert a new field array comments into name: Alex Chen
 print("\n====================result for q_8\n");
 var comarray = ["He taught in 3 universities", "died from cancer", "lived in CA"];
@@ -140,7 +140,7 @@ print("]}");
 //===============================================================================
 // (10) find document first name with "Jo*" and sorted with last name
 print("\n====================result for q_10\n");
-var sortJo = db.test.find({"name.first":{$regex: "Jo"}}, {"_id":1, "name":1}).sort({"name.last":-1}); //decending order
+var sortJo = db.test.find({"name.first":{$regex: "Jo*"}}, {"_id":1, "name":1}).sort({"name.last":-1}); //decending order
 while(sortJo.hasNext()){
   printjson(sortJo.next());
 }
@@ -148,8 +148,26 @@ while(sortJo.hasNext()){
 //=================================================================================
 // (11) report array of distinct organizations that give awards
 print("\n====================result for q_11\n");
-
-
+alldoc = db.test.find();
+var setofaward = [];
+while(alldoc.hasNext()){
+  ppl = alldoc.next();
+  theaward = ppl.awards;
+  if(theaward!=null){
+    asize = theaward.length;
+    //print(asize);
+    for(i=0; i<asize; i++){
+      ttp = theaward[i];
+      theby = ttp.by;
+      //setofaward.push(theby);
+      if(setofaward.indexOf(theby)==-1){
+         setofaward.push(theby);
+         //print(setofaward.indexOf("whatever"));
+      }
+    }
+  }
+}
+print("["+setofaward+"]");
 //=================================================================================
 // (12) delete from all documents that the death field
 print("\n====================result for q_12\n");
@@ -203,7 +221,7 @@ while(results.hasNext()){
 }
 
 //=====================================================================================
-// (17) report the largest id of document
+// (17) report the largest id of all documents
 print("\n====================result for q_17\n");
 projection = db.test.find();
 var maxID = 0;
@@ -221,8 +239,8 @@ printjson(maxreport.next());
 //=====================================================================================
 // (18) report only one document where one of awards is given by ACM
 print("\n====================result for q_18\n");
-rewards = db.test.find({"awards.by":"ACM"});
-printjson(rewards.next());
+rewards = db.test.findOne({"awards.by":"ACM"});
+printjson(rewards);
 
 //===================================================================================
 // (19) delete documents that inserted in Q3 _id=20 and _id=30
