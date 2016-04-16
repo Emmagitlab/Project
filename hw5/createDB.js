@@ -296,3 +296,8 @@ bios = {
     ]
 };
 db.test.insert(bios);
+doc = db.test.find().pretty();
+while(doc.hasNext()){
+  printjson(doc.next());
+}
+
