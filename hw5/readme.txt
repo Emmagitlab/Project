@@ -8,9 +8,8 @@ Keynote:
    > script hw5output.txt
    > mongo
    > load("createDB.js");
-   result of q1 will show immediately and in output file:hw5output.txt;
    > load("hw5.js");
    > quit();
-   > exit;
+   > exit
 
-   After finish, all output results from will be in hw5output.txt
+   After finish, all output results will be captured in hw5output.txt
