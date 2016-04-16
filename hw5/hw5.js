@@ -252,7 +252,6 @@ printjson(rewards);
 // (19) delete documents that inserted in Q3 _id=20 and _id=30
 print("\n====================results for q_19\n");
 db.test.remove({$or:[{_id:20}, {_id:30}]});
-var totaldoc = db.test.find().count();
 printjson("Left documents is: ");
 
 leftdoc = db.test.find().pretty();
