@@ -8,8 +8,7 @@ Keynote:
    > script hw5output.txt
    > mongo
    > load("createDB.js");
-   check result of q1:
-   > db.test.find().pretty();
+   result of q1 will show immediately;
    > load("hw5.js");
    > quit();
    > exit;
