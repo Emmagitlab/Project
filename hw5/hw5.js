@@ -255,10 +255,13 @@ db.test.remove({$or:[{_id:20}, {_id:30}]});
 doc = db.test.find().pretty();
 while(doc.hasNext()){
   printjson(doc.next());
-}
-//=====================================================================================
+};
+//====================================================================================
 // (20) print the total number of documents in test collection
 print("\n====================results for q_20\n");
-totaldoc = db.test.find().count();
+var totaldoc = db.test.find().count();
 printjson("The total number of documents is: "+totaldoc);
+
+printjson("\n====================complete");
+
 
