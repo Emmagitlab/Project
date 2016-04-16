@@ -1,7 +1,9 @@
-//cursor = db.test.find();
-//while(cursor.hasNext()){
-	//printjson(cursor.next());
-//}
+/**
+ * cs561 hw5
+ * Team_10
+ * April/07/2015
+ */
+ 
 db.test.drop();
 db.createCollection("test");
 
@@ -296,8 +298,3 @@ bios = {
     ]
 };
 db.test.insert(bios);
-doc = db.test.find().pretty();
-while(doc.hasNext()){
-  printjson(doc.next());
-}
-
