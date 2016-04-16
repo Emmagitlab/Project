@@ -67,6 +67,11 @@ var new2 = {
 
 db.test.insert(new1);
 db.test.insert(new2);
+doc = db.test.find().pretty();
+while(doc.hasNext()){
+  printjson(doc.next());
+}
+
 
 //==================================================================
 // (4) report Turing Award when year>1976
@@ -140,7 +145,7 @@ print("]}");
 //===============================================================================
 // (10) find document first name with "Jo*" and sorted with last name
 print("\n====================result for q_10\n");
-var sortJo = db.test.find({"name.first":{$regex: "Jo*"}}, {"_id":1, "name":1}).sort({"name.last":-1}); //decending order
+var sortJo = db.test.find({"name.first":{$regex: /Jo/}}, {"_id":1, "name":1});
 while(sortJo.hasNext()){
   printjson(sortJo.next());
 }
@@ -161,12 +166,13 @@ while(alldoc.hasNext()){
       theby = ttp.by;
       //setofaward.push(theby);
       if(setofaward.indexOf(theby)==-1){
-         setofaward.push(theby);
+         setofaward.push("'"+theby+"'");
          //print(setofaward.indexOf("whatever"));
       }
     }
   }
 }
+
 print("["+setofaward+"]");
 //=================================================================================
 // (12) delete from all documents that the death field
@@ -199,8 +205,8 @@ while(newone.hasNext()){
 // (14) update the _id=30, award given by WPI and set the year=1965
 print("\n====================result for q_14\n");
 db.test.update({"_id":30, "awards.by":"WPI"},{$set: {"awards.$.year" : 1965}});
-newone = db.test.find({_id:30});
-printjson(newone.next());
+var newone = db.test.findOne({_id:30});
+printjson(newone);
 
 //====================================================================================
 // (15) add or copy all contribute from document _id=3 to the document _id=30
@@ -244,10 +250,15 @@ printjson(rewards);
 
 //===================================================================================
 // (19) delete documents that inserted in Q3 _id=20 and _id=30
-print("\n====================results for q_19 and q_20\n");
+print("\n====================results for q_19\n");
 db.test.remove({$or:[{_id:20}, {_id:30}]});
-
+doc = db.test.find().pretty();
+while(doc.hasNext()){
+  printjson(doc.next());
+}
 //=====================================================================================
 // (20) print the total number of documents in test collection
+print("\n====================results for q_20\n");
 totaldoc = db.test.find().count();
-print("The total number of documents is: "+totaldoc);
+printjson("The total number of documents is: "+totaldoc);
+
