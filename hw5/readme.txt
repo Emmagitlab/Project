@@ -13,4 +13,4 @@ Keynote:
    > quit();
    > exit;
 
-   After finish, all output results will be in hw5output.txt
+   After finish, all output results from q2 to q20 will be in hw5output.txt
