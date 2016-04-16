@@ -252,11 +252,11 @@ printjson(rewards);
 // (19) delete documents that inserted in Q3 _id=20 and _id=30
 print("\n====================results for q_19\n");
 db.test.remove({$or:[{_id:20}, {_id:30}]});
-printjson("Left documents is: ");
+print("Left documents are: ");
 
 leftdoc = db.test.find().pretty();
 while(leftdoc.hasNext()){
-  printjson(leftdoc.next());
+  print(leftdoc.next());
 };
 //====================================================================================
 // (20) print the total number of documents in test collection
