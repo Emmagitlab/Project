@@ -1,9 +1,7 @@
-/**
- * cs561 hw5
- * Team_10
- * April/07/2015
- */
- 
+//cursor = db.test.find();
+//while(cursor.hasNext()){
+	//printjson(cursor.next());
+//}
 db.test.drop();
 db.createCollection("test");
 
@@ -298,3 +296,8 @@ bios = {
     ]
 };
 db.test.insert(bios);
+doc = db.test.find().pretty();
+while(doc.hasNext()){
+  printjson(doc.next());
+}
+
