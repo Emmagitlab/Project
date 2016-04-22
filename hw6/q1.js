@@ -1,7 +1,10 @@
-//CS561 hw6
-//Question #1 
-//Team 10
-//April/21/2016
+/**
+ * CS561 hw6
+ * Question #1 
+ * Team 10
+ * April/21/2016
+ * 
+ **/
 
 //=====================================================================
 // Craete the Parents reference tree
@@ -73,8 +76,8 @@ db.categories.insert({_id:"Languages", children:[]});
 db.categories.insert({_id:"Programming", children:["Databases", "Languages"]});
 db.categories.insert({_id:"Books", children:["Programming"]});
 
-var children = db.categories.findOne({children:"dbm"})._id;
-printjson(children);
+var aparent = db.categories.findOne({children:"dbm"})._id;
+printjson(aparent);
 
 //===============================================================================
 // (4) using child reference model now, find the parent of "dbm"
