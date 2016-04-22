@@ -39,8 +39,19 @@ printjson(mindoc);
 //=============================================================================
 // (4) use $text operator to search "Turing Award" as one sentence(not separate keywords)
 print("\n==========================result for (4)");
-
+db.test.createIndex({"awards.award":"text"});
+var results = db.test.find({$text: {$search: "\"Turing Award\""}});
+while(results.hasNext()){
+    printjson(results.next());
+}
 
 //=============================================================================
 // (5) use $text operator to search either contain "Turing" or "National Meddal"
 print("\n==========================result for (5)");
+db.test.createIndex({"awards.award":"text"});
+var results = db.test.find({$text: {$search: "Turing \"National Medal\""}});
+while(results.hasNext()){
+    printjson(results.next());
+}
+
+print("\n=============================end of q2");
