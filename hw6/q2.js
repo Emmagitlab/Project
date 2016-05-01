@@ -91,7 +91,7 @@ print("\n==========================result for (5)");
 db.test.createIndex({"awards.award":"text"});
 var results = db.test.find({$text: {$search: "\"National Medal\""}});
 var result2 = db.test.find({$text: {$search: "Turing"}});
-var stack;
+var stack = [];
 while(results.hasNext()){
     stack.push(results.next()._id);
     printjson(results.next());
