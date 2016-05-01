@@ -98,8 +98,9 @@ var results = db.test.find({$text: {$search: "\"National Medal\""}});
 var result2 = db.test.find({$text: {$search: "Turing"}});
 var stack = [];
 while(results.hasNext()){
-    stack.push(results.next()._id);
-    printjson(results.next());
+    var temp = results.next();
+    printjson(temp);
+    stack.push(temp._id);
 }
 while(result2.hasNext()){
     var newid = result2.next()._id;
