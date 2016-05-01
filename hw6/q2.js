@@ -9,6 +9,27 @@
 //===================================================================
 // (1) write the aggregation query that groups by awards.award
 print("\n==========================result for (1)");
+var mapFuction = function(){
+  for (var idx = 0; idx < this.awards.length; idx++){
+    var key = this.awards[idx].award;
+    var value = {count: 1};
+    emit(key,value);
+    
+  }
+  
+};
+var reduceFunction = function(key, countObjVals){
+  reducedVal = {count: 0};
+  
+  for (var idx = 0; idx < countObjVals.length; idx++){
+    reduceVal.count += countObjVals[idx].count;
+  }
+  return reduceVal;
+  
+}
+
+
+
  
 //===================================================================
 // (2) write the aggregation query that groups by birth.year
