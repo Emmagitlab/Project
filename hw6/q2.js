@@ -48,16 +48,12 @@ printjson(result);
 //===================================================================
 // (2) write the aggregation query that groups by birth.year
 print("\n==========================result for (2)");
-var nobirth = db.test.findOne({birth:null});
-var theid = nobirth._id;
-db.test.remove({_id:theid});
 
 var result = db.test.aggregate([{$group:{_id:{year:{$year:"$birth"}},ids:{$push:"$_id"}}}]);
 
 while(result.hasNext()){
     printjson(result.next());
 }
-db.test.insert(nobirth);
 //===================================================================
 // (3) report the documents that have smallest and largest _id 
 print("\n==========================result for (3)");
