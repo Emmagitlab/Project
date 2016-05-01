@@ -27,7 +27,15 @@ var reduceFunction = function(key, countObjVals){
   return reduceVal;
   
 }
-
+var result = db.test.mapReduce(
+    mapFuction,
+    reduceFunction,
+    {out:"award count"}
+    
+    )
+while(result.hasNext()){
+    printjson(result.next());
+}
 
 
  
