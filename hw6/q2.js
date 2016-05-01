@@ -98,7 +98,7 @@ while(results.hasNext()){
 }
 while(result2.hasNext()){
     var newid = result2.next()._id;
-    if(stack.indexof(newid)){
+    if(stack.indexOf(newid)){
         var doc = db.text.findOne({_id:newid});
         printjson(doc);
     }
