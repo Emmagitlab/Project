@@ -10,32 +10,38 @@
 // (1) write the aggregation query that groups by awards.award
 print("\n==========================result for (1)");
 var mapFuction = function(){
+   if(this.awards){
   for (var idx = 0; idx < this.awards.length; idx++){
     var key = this.awards[idx].award;
     var value = {count: 1};
     emit(key,value);
-    
   }
+  }
+    
   
 };
 var reduceFunction = function(key, countObjVals){
   reducedVal = {count: 0};
   
   for (var idx = 0; idx < countObjVals.length; idx++){
-    reduceVal.count += countObjVals[idx].count;
+    reducedVal.count += countObjVals[idx].count;
   }
-  return reduceVal;
+  
+  return reducedVal;
+
   
 }
+//var awardsdoc = db.test.find({"awards":{$gte:{$size:1}}});
+
 var result = db.test.mapReduce(
     mapFuction,
     reduceFunction,
-    {out:"award count"}
-    
+    {out:{inline: 1 }
+    }
     )
-while(result.hasNext()){
-    printjson(result.next());
-}
+    
+printjson(result);
+
 
 
  
@@ -43,6 +49,11 @@ while(result.hasNext()){
 // (2) write the aggregation query that groups by birth.year
 print("\n==========================result for (2)");
 
+var result = db.test.aggregate([{$group:{_id:{year:{$year:"$birth"}},ids:{$push:"$_id"}}}]);
+
+while(result.hasNext()){
+    printjson(result.next());
+}
 //===================================================================
 // (3) report the documents that have smallest and largest _id 
 print("\n==========================result for (3)");
