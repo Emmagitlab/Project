@@ -104,9 +104,11 @@ while(results.hasNext()){
 while(result2.hasNext()){
     var newid = result2.next()._id;
     if(stack.indexOf(newid)){
+        // var doc = db.text.findOne({_id:newid});
+        // printjson(doc);
+    }else{
         var doc = db.text.findOne({_id:newid});
         printjson(doc);
     }
 }
-
 print("\n=============================end of q2");
