@@ -6,7 +6,7 @@ Keynotes:
 
 0. You need to use the newest version of mongoDB to test the following query
    q1.js and q2.js
-   You can also use the mongoDB online terminal to test these querys. 
+   You can also use the mongoDB online terminal to test these querys: copy the .js files to online terminal and execute as following.
 
 1. To test q1.js you can use the command line:
    > mongo
